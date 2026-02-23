@@ -1,0 +1,37 @@
+/*
+  Pelak font loading
+  ------------------
+  Pelak is often distributed under a commercial license.
+  This project DOES NOT ship Pelak binaries.
+
+  If you have the font files, place them here:
+    vpschat/static/fonts/Pelak-Regular.woff2
+    vpschat/static/fonts/Pelak-Medium.woff2
+    vpschat/static/fonts/Pelak-Bold.woff2
+
+  سپس پروژه به طور خودکار از Pelak استفاده می‌کند و اگر نبود، روی Vazirmatn می‌افتد.
+*/
+
+@font-face {
+  font-family: "Pelak";
+  src: url("../fonts/Pelak-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pelak";
+  src: url("../fonts/Pelak-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pelak";
+  src: url("../fonts/Pelak-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

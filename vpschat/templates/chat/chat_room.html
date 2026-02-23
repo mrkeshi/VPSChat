@@ -1,0 +1,343 @@
+{% extends 'chat/base.html' %}
+{% block title %} - {{ room.name }}{% endblock %}
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+{% block content %}
+  <div class="grid">
+    <section class="card chat">
+      <div class="chat-head">
+        <div>
+          <h1>{{ room.name }}</h1>
+          <div class="muted small">شما: <b>{{ display_name }}</b></div>
+        </div>
+	        <div class="row" style="gap:8px">
+	          <button id="soundBtn" class="btn icon ghost" type="button" title="صدا: روشن" aria-label="Notification sound">
+	            🔔
+	          </button>
+	          <button id="fsBtn" class="btn icon" type="button" title="تمام‌صفحه" aria-label="Fullscreen">
+	            ⛶
+	          </button>
+	        </div>
+      </div>
+
+      <div id="chatLog" class="chat-log" aria-live="polite">
+        {% for m in messages %}
+          <div class="msg {% if m.type == 'system' %}system{% elif m.sender_name == display_name %}me{% else %}other{% endif %}">
+            <div class="meta">
+              <span class="sender">{{ m.sender_name }}</span>
+              <span class="time">{{ m.timestamp|date:"H:i" }}</span>
+            </div>
+            {% if m.type == 'file' and m.file %}
+              <div class="bubble" dir="auto">
+                <a href="{{ m.file.url }}" target="_blank" rel="noopener">{{ m.file_name|default:m.file.name }}</a>
+              </div>
+            {% else %}
+              <div class="bubble" dir="auto">{{ m.content|linebreaksbr }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <form id="sendForm" class="send">
+        <input id="msgInput" class="input" type="text" placeholder="پیام..." autocomplete="off" maxlength="2000">
+        <button class="btn" type="submit">ارسال</button>
+      </form>
+
+      {% if enable_file_upload %}
+      <form id="uploadForm" class="send" enctype="multipart/form-data">
+        <input id="fileInput" class="input" type="file">
+        <button class="btn ghost" type="submit">آپلود</button>
+      </form>
+      <div class="muted small">
+        محدودیت حجم: {{ max_upload_size }} بایت | انواع مجاز: {{ allowed_upload_types|join:", " }}
+      </div>
+      {% endif %}
+    </section>
+
+    <aside class="card side">
+      <h2>کاربران</h2>
+      <div id="presenceBox" class="presence muted">در حال دریافت...</div>
+    </aside>
+  </div>
+
+<script>
+(function(){
+  const wsPath = "{{ ws_path }}";
+  const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
+  const myName = "{{ display_name|escapejs }}";
+
+	  // --- iPhone-like notification tone (WebAudio, no copyrighted audio file) ---
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+  function ensureAudio(){
+    if(!AudioCtx) return null;
+    if(!audioCtx) audioCtx = new AudioCtx();
+    if(audioCtx.state === "suspended") audioCtx.resume().catch(()=>{});
+    return audioCtx;
+  }
+
+	  function isSoundMuted(){
+	    return (localStorage.getItem("chat_sound_muted") === "1");
+	  }
+	  function setSoundMuted(muted){
+	    localStorage.setItem("chat_sound_muted", muted ? "1" : "0");
+	    syncSoundButton();
+	  }
+	  function syncSoundButton(){
+	    if(!soundBtn) return;
+	    const muted = isSoundMuted();
+	    soundBtn.textContent = muted ? "🔕" : "🔔";
+	    soundBtn.title = muted ? "صدا: خاموش" : "صدا: روشن";
+	    soundBtn.setAttribute("aria-label", soundBtn.title);
+	  }
+
+	  // A short, bright double-chime reminiscent of iOS message notifications.
+	  // (Designed from scratch to avoid shipping Apple's actual sound.)
+	  function playNotificationTone(){
+	    try{
+	      if(isSoundMuted()) return;
+	      const ctx = ensureAudio();
+	      if(!ctx) return;
+
+	      const now = ctx.currentTime;
+	      const mkChime = (t0, f0) => {
+	        const o1 = ctx.createOscillator();
+	        const o2 = ctx.createOscillator();
+	        const g = ctx.createGain();
+	        const lp = ctx.createBiquadFilter();
+	        const hp = ctx.createBiquadFilter();
+
+	        o1.type = "sine";
+	        o2.type = "triangle";
+	        o1.frequency.setValueAtTime(f0, t0);
+	        o2.frequency.setValueAtTime(f0 * 2, t0);
+
+	        lp.type = "lowpass";
+	        lp.frequency.setValueAtTime(6000, t0);
+	        hp.type = "highpass";
+	        hp.frequency.setValueAtTime(500, t0);
+
+	        // Envelope
+	        g.gain.setValueAtTime(0.0001, t0);
+	        g.gain.exponentialRampToValueAtTime(0.12, t0 + 0.008);
+	        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+
+	        o1.connect(lp);
+	        o2.connect(lp);
+	        lp.connect(hp);
+	        hp.connect(g);
+	        g.connect(ctx.destination);
+
+	        o1.start(t0); o2.start(t0);
+	        o1.stop(t0 + 0.14); o2.stop(t0 + 0.14);
+	      };
+
+	      mkChime(now, 1318);
+	      mkChime(now + 0.16, 1567);
+
+	      // Gentle vibration on supported devices
+	      if(navigator.vibrate){
+	        navigator.vibrate([18, 24, 18]);
+	      }
+	    }catch(e){}
+	  }
+
+  let socket = null;
+  let openedOnce = false;
+  let reconnectTimer = null;
+  let reconnectDelay = 600; // ms
+
+  function connect(){
+    if(reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = null; }
+    socket = new WebSocket(`${protocol}://${window.location.host}${wsPath}`);
+
+	    socket.onmessage = (e) => {
+	      try{
+	        const m = JSON.parse(e.data);
+	        appendMessage(m);
+	        // Play sound only for real incoming messages
+	        if(m && m.type !== "system" && (m.sender || "") !== myName){
+	          playNotificationTone();
+	        }
+	      }catch(err){}
+	    };
+
+    socket.onopen = () => {
+      openedOnce = true;
+      reconnectDelay = 600;
+      log.scrollTop = log.scrollHeight;
+    };
+
+    socket.onclose = () => {
+      // فقط اگر قبلاً اتصال برقرار شده بود، پیام قطع ارتباط نشان بده
+      if(openedOnce){
+        appendMessage({type:"system", sender:"سیستم", content:"ارتباط قطع شد. تلاش برای اتصال مجدد...", timestamp: new Date().toISOString()});
+      }
+      // auto reconnect
+      reconnectTimer = setTimeout(connect, reconnectDelay);
+      reconnectDelay = Math.min(6000, Math.floor(reconnectDelay * 1.6));
+    };
+  }
+
+  const log = document.getElementById("chatLog");
+  const form = document.getElementById("sendForm");
+  const input = document.getElementById("msgInput");
+  const presenceBox = document.getElementById("presenceBox");
+  const fsBtn = document.getElementById("fsBtn");
+	  const soundBtn = document.getElementById("soundBtn");
+
+	  // enable audio on first user action (autoplay policies)
+	  window.addEventListener("pointerdown", () => { ensureAudio(); }, {once:true});
+	  syncSoundButton();
+	  if(soundBtn){
+	    soundBtn.addEventListener("click", () => {
+	      // Ensure audio context is unlocked by a user gesture before toggling on.
+	      ensureAudio();
+	      setSoundMuted(!isSoundMuted());
+	      if(!isSoundMuted()) playNotificationTone();
+	    });
+	  }
+
+  function escapeHtml(s){
+    return (s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+
+  function appendMessage(m){
+    const div = document.createElement("div");
+    const isMe = (m.type !== "system") && ((m.sender || "") === myName);
+    div.className = "msg" + (m.type === "system" ? " system" : (isMe ? " me" : " other"));
+    const time = new Date(m.timestamp || Date.now());
+    const hh = String(time.getHours()).padStart(2,"0");
+    const mm = String(time.getMinutes()).padStart(2,"0");
+
+    let body = "";
+    if (m.type === "file") {
+      const url = escapeHtml(m.file_url);
+      const name = escapeHtml(m.file_name || "file");
+      body = `<div class="bubble"><a href="${url}" target="_blank" rel="noopener">${name}</a></div>`;
+    } else {
+      body = `<div class="bubble">${escapeHtml(m.content).replaceAll("\n","<br>")}</div>`;
+    }
+
+    div.innerHTML = `
+      <div class="meta">
+        <span class="sender">${escapeHtml(m.sender || "")}</span>
+        <span class="time">${hh}:${mm}</span>
+      </div>
+      ${body}
+    `;
+    // Make direction automatic per-message (Persian/English mixed)
+    const bubble = div.querySelector('.bubble');
+    if(bubble) bubble.setAttribute('dir','auto');
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  connect();
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = (input.value || "").trim();
+    if(!text) return;
+    if(!socket || socket.readyState !== 1){
+      appendMessage({type:"system", sender:"سیستم", content:"در حال اتصال... لطفاً دوباره تلاش کنید.", timestamp: new Date().toISOString()});
+      return;
+    }
+    socket.send(JSON.stringify({type:"text", content:text}));
+    input.value = "";
+  });
+
+  // Presence polling
+  async function refreshPresence(){
+    try{
+      const res = await fetch("{% url 'chat:room_presence' room.slug %}");
+      if(!res.ok) return;
+      const data = await res.json();
+      if(!data.users) return;
+      const items = data.users.map(u => {
+        const status = u.is_online ? "آنلاین" : "آفلاین";
+        return `<div class="user">
+          <div><b>${escapeHtml(u.display_name)}</b> <span class="badge ${u.is_online ? "ok" : ""}">${status}</span></div>
+          <div class="muted small">آخرین بازدید: ${escapeHtml(u.last_seen_human)}</div>
+        </div>`;
+      }).join("");
+      presenceBox.className = "presence";
+      presenceBox.innerHTML = items || "<div class='muted'>هیچ کاربری ثبت نشده.</div>";
+    }catch(err){}
+  }
+  refreshPresence();
+  setInterval(refreshPresence, 10000);
+
+  // Upload
+  const uploadForm = document.getElementById("uploadForm");
+  const fileInput = document.getElementById("fileInput");
+  if(uploadForm){
+    uploadForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if(!fileInput.files || !fileInput.files[0]) return;
+      const f = fileInput.files[0];
+      const fd = new FormData();
+      fd.append("file", f);
+
+      const res = await fetch("{% url 'chat:upload_file' room.slug %}", {
+        method: "POST",
+        body: fd,
+        credentials: "same-origin",
+        headers: {"X-CSRFToken": getCsrfToken()}
+      });
+
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok){
+        appendMessage({type:"system", sender:"سیستم", content: (data.detail || "آپلود ناموفق"), timestamp: new Date().toISOString()});
+        return;
+      }
+
+      if(!socket || socket.readyState !== 1){
+        appendMessage({type:"system", sender:"سیستم", content:"در حال اتصال... لطفاً دوباره تلاش کنید.", timestamp: new Date().toISOString()});
+        return;
+      }
+
+      socket.send(JSON.stringify({
+        type: "file",
+        file_url: data.file_url,
+        file_name: data.file_name,
+        message_id: data.message_id
+      }));
+      fileInput.value = "";
+    });
+  }
+
+  // Fullscreen toggle (whole chat card)
+  if(fsBtn){
+    fsBtn.addEventListener("click", async () => {
+      const target = document.querySelector("section.card.chat");
+      if(!document.fullscreenElement){
+        try{ await target.requestFullscreen(); }catch(e){}
+      }else{
+        try{ await document.exitFullscreen(); }catch(e){}
+      }
+    });
+    document.addEventListener("fullscreenchange", () => {
+      const on = !!document.fullscreenElement;
+      document.body.classList.toggle("is-fs", on);
+      fsBtn.textContent = on ? "⤫" : "⛶";
+    });
+  }
+
+  function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  function getCsrfToken(){
+    // Prefer cookie (Django default), fallback to meta tag.
+    const c = getCookie("csrftoken");
+    if(c) return c;
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : "";
+  }
+})();
+</script>
+{% endblock %}

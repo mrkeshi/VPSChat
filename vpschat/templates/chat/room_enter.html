@@ -1,0 +1,24 @@
+{% extends 'chat/base.html' %}
+{% block title %} - ورود به {{ room.name }}{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>ورود به: {{ room.name }}</h1>
+
+    <form method="post" class="form">
+      {% csrf_token %}
+
+      <label>نام نمایشی</label>
+      {{ form.display_name }}
+      {% if form.display_name.errors %}<div class="error">{{ form.display_name.errors|striptags }}</div>{% endif %}
+
+      {% if room.is_protected %}
+        <label>رمز اتاق</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="error">{{ form.password.errors|striptags }}</div>{% endif %}
+      {% endif %}
+
+      <button class="btn" type="submit">ورود</button>
+      <a class="btn ghost" href="{% url 'chat:room_list' %}">بازگشت</a>
+    </form>
+  </div>
+{% endblock %}

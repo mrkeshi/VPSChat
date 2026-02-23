@@ -1,0 +1,296 @@
+:root{
+  /* iOS / iPhone inspired palette */
+  --bg:#f2f2f7;
+  --card:#ffffff;
+  --text:#0b0b0f;
+  --muted:#6b7280;
+  --border: rgba(60,60,67,.18);
+  --shadow: 0 10px 26px rgba(0,0,0,.08);
+
+  --accent:#007aff;    /* iOS blue */
+  --accent2:#34c759;   /* iOS green */
+  --accent3:#ffcc00;   /* iOS yellow */
+  --ok:#34c759;
+
+  --bubble-other:#e5e5ea;
+  --bubble-me:#007aff;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: "Pelak", "Vazirmatn", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color:var(--text);
+}
+a{color:inherit; text-decoration:none}
+
+.container{max-width:1100px; margin:0 auto; padding:18px}
+
+/* Header */
+.header{
+  position:sticky; top:0; z-index:10;
+  background: rgba(242,242,247,.78);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.row{display:flex; align-items:center}
+.row.between{justify-content:space-between}
+.brand{
+  font-weight:900;
+  letter-spacing:.2px;
+  padding:8px 10px;
+  border-radius:14px;
+  background: rgba(0,122,255,.10);
+  border: 1px solid var(--border);
+}
+.nav{margin-right:auto; display:flex; gap:10px}
+.nav a{
+  color:var(--muted);
+  padding:8px 10px;
+  border-radius:12px;
+}
+.nav a:hover{color:var(--text); background: rgba(20,24,36,.04)}
+
+@media (max-width: 900px){
+  .nav{display:none}
+}
+
+/* Common */
+.card{
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px;
+  box-shadow: var(--shadow);
+}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.flash{margin:12px 0; display:grid; gap:8px}
+.flash-item{padding:10px 12px; border:1px solid var(--border); border-radius:14px; background:rgba(20,24,36,.02)}
+
+.btn{
+  border:none;
+  background: var(--accent);
+  color: white;
+  padding:10px 14px;
+  border-radius:14px;
+  font-weight:800;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  box-shadow: 0 10px 24px rgba(0,122,255,.22);
+}
+.btn:hover{transform: translateY(-1px)}
+.btn:active{transform: translateY(0)}
+.btn.ghost{
+  background: transparent;
+  border:1px solid var(--border);
+  color: var(--text);
+  box-shadow:none;
+}
+.btn.small{padding:6px 10px; border-radius:12px; font-size:12px; font-weight:800}
+.btn.icon{padding:10px 12px; border-radius:14px; min-width:44px; justify-content:center}
+
+.input{
+  width:100%;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.9);
+  color: var(--text);
+  border-radius:14px;
+  padding:10px 12px;
+  outline:none;
+}
+/* iOS focus */
+.input:focus{border-color: rgba(0,122,255,.55); box-shadow: 0 0 0 4px rgba(0,122,255,.15)}
+
+.form{display:grid; gap:10px; margin-top:12px}
+.error{color:#dc2626; font-size:13px}
+
+/* Hero (home) */
+.hero{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+  margin-top: 10px;
+  padding: 18px;
+  border-radius: 22px;
+  border:1px solid var(--border);
+  background:
+    linear-gradient(135deg, rgba(255,107,107,.18), rgba(77,212,172,.16));
+  box-shadow: var(--shadow);
+}
+.hero-title{margin:0; font-size:28px; font-weight:950}
+.hero-sub{margin:8px 0 0 0; color: rgba(20,24,36,.68); line-height:1.9}
+.hero-actions{display:flex; gap:10px; flex-wrap:wrap}
+
+/* Rooms grid */
+.rooms-grid{
+  margin-top: 14px;
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1100px){
+  .rooms-grid{grid-template-columns: repeat(3, 1fr);}
+}
+@media (max-width: 820px){
+  .rooms-grid{grid-template-columns: repeat(2, 1fr);}
+}
+@media (max-width: 520px){
+  .rooms-grid{grid-template-columns: 1fr;}
+}
+
+.room-card{
+  aspect-ratio: 1 / 1;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.92);
+  box-shadow: var(--shadow);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.room-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 18px 50px rgba(20,24,36,.14);
+  border-color: rgba(255,107,107,.35);
+}
+.room-card.has-online{border-color: rgba(34,197,94,.38)}
+
+.room-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+.room-title{font-weight:950; font-size:16px; line-height:1.6; display:flex; align-items:center; gap:10px}
+.dot{width:10px; height:10px; border-radius:999px; display:inline-block}
+.dot-online{background: var(--ok); box-shadow: 0 0 0 4px rgba(34,197,94,.12)}
+.dot-offline{background: rgba(20,24,36,.18)}
+
+.pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid var(--border);
+  color: rgba(20,24,36,.82);
+  background: rgba(20,24,36,.03);
+}
+.pill.ok{
+  border-color: rgba(77,212,172,.45);
+  background: rgba(77,212,172,.14);
+}
+
+.room-stats{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  margin-top: 12px;
+}
+.stat{padding:10px; border:1px dashed rgba(20,24,36,.14); border-radius:16px; background: rgba(255,255,255,.75)}
+.stat-label{font-size:12px; color: rgba(20,24,36,.62)}
+.stat-value{font-weight:950; margin-top:6px}
+
+.room-foot{display:flex; align-items:center; justify-content:space-between; margin-top:10px}
+.arrow{font-weight:950; opacity:.55}
+
+.empty{grid-column: 1 / -1}
+
+/* Chat layout */
+.grid{
+  display:grid;
+  grid-template-columns: 1fr 330px;
+  gap:12px;
+}
+@media (max-width: 900px){
+  .grid{grid-template-columns:1fr}
+}
+
+.chat{min-height: calc(100vh - 160px)}
+.chat-head{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:10px}
+
+.chat-log{
+  height: 58vh;
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:12px;
+  background: rgba(255,255,255,.72);
+}
+
+.msg{margin:0 0 10px 0}
+.msg .meta{display:flex; justify-content:space-between; color:rgba(20,24,36,.55); font-size:12px; margin-bottom:4px}
+.msg .sender{font-weight:950; color: rgba(20,24,36,.88)}
+.msg.system .sender{color: rgba(246,196,83,.95)}
+
+/* iPhone-like bubbles */
+.msg.me{display:flex; flex-direction:column; align-items:flex-end}
+.msg.other{display:flex; flex-direction:column; align-items:flex-start}
+.msg.me .meta{width:100%; max-width: 82%; justify-content:flex-end; gap:10px}
+.msg.other .meta{width:100%; max-width: 82%}
+.msg.me .sender{display:none}
+
+.msg.me .bubble{
+  background: var(--bubble-me);
+  border-color: rgba(0,122,255,.35);
+  color: #fff;
+  border-bottom-right-radius: 8px;
+}
+.msg.other .bubble{
+  background: var(--bubble-other);
+  border-color: rgba(60,60,67,.16);
+  border-bottom-left-radius: 8px;
+}
+.msg.system{display:block}
+
+.bubble{
+  display:inline-block;
+  padding:10px 12px;
+  border-radius:18px;
+  border:1px solid rgba(20,24,36,.10);
+  background: rgba(255,255,255,.92);
+  max-width:82%;
+  word-break: break-word;
+  unicode-bidi: plaintext;
+}
+.msg.system .bubble{background: rgba(246,196,83,.14); border-color: rgba(246,196,83,.30)}
+
+.send{display:flex; gap:8px; margin-top:10px}
+.send .input{flex:1}
+
+.side{height: fit-content}
+.presence{display:grid; gap:10px; margin-top:8px}
+.user{border:1px solid var(--border); border-radius:18px; padding:10px; background: rgba(255,255,255,.8)}
+
+.badge{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:3px 10px; border-radius:999px;
+  border:1px solid rgba(20,24,36,.14);
+  color: rgba(20,24,36,.80);
+  font-size:12px;
+}
+.badge.ok{border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12)}
+
+/* Tables (admin panel) */
+.table{width:100%; border-collapse: collapse; margin-top:10px}
+.table th,.table td{padding:10px; border-bottom:1px solid var(--border); text-align:right}
+
+.footer{margin-top:16px; border-top:1px solid var(--border); padding:14px 0; color:var(--muted)}
+
+/* Fullscreen chat */
+body.is-fs .header,
+body.is-fs .footer{display:none}
+body.is-fs .container{max-width:none; padding:0}
+body.is-fs .card.chat{border-radius:0; height:100vh; box-shadow:none}
+body.is-fs .chat-log{height: calc(100vh - 170px)}
+
+/*
+  NOTE:
+  This stylesheet previously contained a duplicated "Chat layout (iOS-like)"
+  section redefining .msg/.bubble styles (and making received messages white).
+  That caused confusing overrides and prevented the requested gray color for
+  incoming messages. The duplicate block was intentionally removed.
+*/

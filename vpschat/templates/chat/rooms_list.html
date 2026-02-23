@@ -1,0 +1,55 @@
+{% extends 'chat/base.html' %}
+{% block title %} - لیست اتاق‌ها{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div>
+      <h1 class="hero-title">اتاق‌های گفتگو</h1>
+      <p class="hero-sub">روی یک اتاق کلیک کن تا وارد چت زنده بشی. اتاق‌های رمزدار فقط یکبار رمز می‌گیرن و دسترسی‌شون داخل سشن ذخیره می‌شه.</p>
+    </div>
+    <div class="hero-actions">
+      <a class="btn" href="{% url 'chat:manage_rooms' %}">پنل مدیریت اتاق‌ها</a>
+      <a class="btn ghost" href="/admin/">پنل مدیریت</a>
+    </div>
+  </section>
+
+  <section class="rooms-grid" aria-label="لیست اتاق‌ها">
+    {% for room in rooms %}
+      <a class="room-card {% if room.online_count|default:0 > 0 %}has-online{% endif %}" href="{% url 'chat:enter_room' room.slug %}">
+        <div class="room-top">
+          <div class="room-title">
+            <span class="dot {% if room.online_count|default:0 > 0 %}dot-online{% else %}dot-offline{% endif %}"></span>
+            <span>{{ room.name }}</span>
+          </div>
+
+          {% if room.is_protected %}
+            <span class="pill">رمزدار</span>
+          {% else %}
+            <span class="pill ok">عمومی</span>
+          {% endif %}
+        </div>
+
+        <div class="room-stats">
+          <div class="stat">
+            <div class="stat-label">تاریخ ایجاد</div>
+            <div class="stat-value">{{ room.created_at|date:"Y/m/d" }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">تعداد پیام‌ها</div>
+            <div class="stat-value">{{ room.message_count|default:0 }}</div>
+          </div>
+        </div>
+
+        <div class="room-foot">
+          <span class="muted small">{% if room.online_count|default:0 > 0 %}کاربر فعال دارد{% else %}بدون کاربر فعال{% endif %}</span>
+          <span class="arrow">←</span>
+        </div>
+      </a>
+    {% empty %}
+      <div class="empty card">
+        <h2>فعلاً اتاقی وجود ندارد</h2>
+        <p class="muted">از پنل مدیریت یک اتاق جدید بساز.</p>
+      </div>
+    {% endfor %}
+  </section>
+{% endblock %}

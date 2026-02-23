@@ -1,0 +1,13 @@
+{% extends 'chat/base.html' %}
+{% block title %} - حذف اتاق{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>حذف اتاق</h1>
+    <p>آیا مطمئن هستید که می‌خواهید اتاق <b>{{ room.name }}</b> را حذف کنید؟</p>
+    <form method="post">
+      {% csrf_token %}
+      <button class="btn" type="submit">بله، حذف کن</button>
+      <a class="btn ghost" href="{% url 'chat:manage_rooms' %}">لغو</a>
+    </form>
+  </div>
+{% endblock %}

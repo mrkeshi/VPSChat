@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ SITE_NAME }}{% block title %}{% endblock %}</title>
+
+  <!-- Fonts: Pelak (local if provided) + Vazirmatn fallback -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20260">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="header">
+    <div class="container row">
+      <a class="brand" href="{% url 'chat:room_list' %}">{{ SITE_NAME }}</a>
+      <nav class="nav">
+        <a href="{% url 'chat:room_list' %}">اتاق‌ها</a>
+        <a href="/admin/">پنل مدیریت</a>
+        <a href="{% url 'chat:manage_rooms' %}">پنل مدیریت اتاق‌ها</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {# Flash messages removed per request #}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      {% block footer %}{% endblock %}
+    </div>
+  </footer>
+</body>
+</html>

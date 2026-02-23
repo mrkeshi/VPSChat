@@ -1,0 +1,34 @@
+{% extends 'chat/base.html' %}
+{% block title %} - {% if mode == 'create' %}ایجاد اتاق{% else %}ویرایش اتاق{% endif %}{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>{% if mode == 'create' %}ایجاد اتاق جدید{% else %}ویرایش: {{ room.name }}{% endif %}</h1>
+    <form method="post" class="form">
+      {% csrf_token %}
+
+      <label>نام</label>
+      {{ form.name }}
+      {% if form.name.errors %}<div class="error">{{ form.name.errors|striptags }}</div>{% endif %}
+
+      <label>slug</label>
+      {{ form.slug }}
+      {% if form.slug.errors %}<div class="error">{{ form.slug.errors|striptags }}</div>{% endif %}
+
+      <label class="row">
+        {{ form.is_protected }} <span>رمزدار باشد</span>
+      </label>
+
+      <label>رمز (برای تغییر/تنظیم)</label>
+      {{ form.password }}
+      {% if form.password.errors %}<div class="error">{{ form.password.errors|striptags }}</div>{% endif %}
+
+      <div class="row gap">
+        <button class="btn" type="submit">ذخیره</button>
+        <a class="btn ghost" href="{% url 'chat:manage_rooms' %}">بازگشت</a>
+      </div>
+      <div class="muted small">
+        اگر اتاق رمزدار باشد و فیلد رمز را خالی بگذارید، در حالت ویرایش رمز قبلی حفظ می‌شود.
+      </div>
+    </form>
+  </div>
+{% endblock %}
