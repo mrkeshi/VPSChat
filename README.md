@@ -1,4 +1,4 @@
-# 🚀 Penvis Realtime Chat
+# 🚀 Realtime Chat
 
 ![Django](https://img.shields.io/badge/Django-Backend-green)
 ![WebSockets](https://img.shields.io/badge/WebSockets-Realtime-blue)
